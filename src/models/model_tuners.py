@@ -5,6 +5,7 @@ from typing import Any, Dict, Mapping, Tuple, Union
 
 from .base_tuner import BaseTuner
 
+from numpy import mean
 from optuna import Trial
 from pandas import DataFrame
 from sklearn.base import BaseCrossValidator, BaseEstimator
@@ -32,7 +33,7 @@ class LassoRidgeTuner(BaseTuner):
         alpha_upper: float = self.params["alpha"][1]
         alpha: float = trial.suggest_loguniform("alpha", alpha_lower, alpha_upper)
         self.model = self.model(alpha=alpha)
-        return cross_val_score(estimator=self.model, X=self.X, y=self.y, cv=self.cv)
+        return mean(cross_val_score(estimator=self.model, X=self.X, y=self.y, cv=self.cv))
 
 
 class ElasticNetTuner(BaseTuner):
@@ -56,7 +57,7 @@ class ElasticNetTuner(BaseTuner):
             ),
         }
         self.model = self.model(**suggest)
-        return cross_val_score(estimator=self.model, X=self.X, y=self.y, cv=self.cv)
+        return mean(cross_val_score(estimator=self.model, X=self.X, y=self.y, cv=self.cv))
 
 
 class SVRTuner(BaseTuner):
@@ -68,7 +69,7 @@ class SVRTuner(BaseTuner):
         y: DataFrame,
         cv: BaseCrossValidator,
     ) -> None:
-        super().__init__(trials=trials, model=SVR, params=alpha_range, X=X, y=y, cv=cv)
+        super().__init__(trials=trials, model=SVR, params=params, X=X, y=y, cv=cv)
 
     def objective(self, trial: Trial) -> float:
         suggest: Dict[str, Union[float, str]] = {
@@ -80,7 +81,7 @@ class SVRTuner(BaseTuner):
             ),
         }
         self.model = self.model(**suggest)
-        return cross_val_score(estimator=self.model, X=self.X, y=self.y, cv=self.cv)
+        return mean(cross_val_score(estimator=self.model, X=self.X, y=self.y, cv=self.cv))
 
 
 class RFRTuner(BaseTuner):
@@ -103,14 +104,14 @@ class RFRTuner(BaseTuner):
                 "max_depth", self.params["max_depth"][0], self.params["max_depth"][1]
             ),
             "max_features": trial.suggest_categorical("max_features", self.params["max_features"]),
-            "min_sample_leaf": trial.suggest_int(
+            "min_samples_leaf": trial.suggest_int(
                 "min_sample_leaf",
                 self.params["min_sample_leaf"][0],
                 self.params["min_sample_leaf"][1],
             ),
         }
         self.model = self.model(**suggest)
-        return cross_val_score(estimator=self.model, X=self.X, y=self.y, cv=self.cv)
+        return mean(cross_val_score(estimator=self.model, X=self.X, y=self.y, cv=self.cv))
 
 
 class XGBRTuner(BaseTuner):
@@ -126,6 +127,9 @@ class XGBRTuner(BaseTuner):
 
     def objective(self, trial: Trial) -> float:
         suggest: Dict[str, Union[float, int]] = {
+            "n_estimators": trial.suggest_int(
+                "n_estimators", self.params["n_estimators"][0], self.params["n_estimators"][1]
+            ),
             "learning_rate": trial.suggest_loguniform(
                 "learning_rate", self.params["learning_rate"][0], self.params["learning_rate"][1]
             ),
@@ -156,4 +160,4 @@ class XGBRTuner(BaseTuner):
             ),
         }
         self.model = self.model(**suggest)
-        return cross_val_score(estimator=self.model, X=self.X, y=self.y, cv=self.cv)
+        return mean(cross_val_score(estimator=self.model, X=self.X, y=self.y, cv=self.cv))
