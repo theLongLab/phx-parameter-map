@@ -1,30 +1,101 @@
-# -*- coding: utf-8 -*-
-import click
-import logging
+# make_dataset.py
+
+import csv
 from pathlib import Path
-from dotenv import find_dotenv, load_dotenv
+import sys
+from subprocess import run
+
+import pandas as pd
 
 
-@click.command()
-@click.argument('input_filepath', type=click.Path(exists=True))
-@click.argument('output_filepath', type=click.Path())
-def main(input_filepath, output_filepath):
-    """ Runs data processing scripts to turn raw data from (../raw) into
-        cleaned data ready to be analyzed (saved in ../processed).
+def _loop_dirs(dir_path: pd.Series, compiled_metrics: pd.DataFrame) -> None:
     """
-    logger = logging.getLogger(__name__)
-    logger.info('making final data set from raw data')
+    Extract MCC and JSD values using shell commands and update compiled metrics dataframe.
+
+    Parameters
+    ----------
+    dir_path : pd.Series
+        A row within the simulation output directory paths dataframe.
+
+    compiled_metrics : pd.DataFrame
+        The compiled metrics dataframe to be updated.
+    """
+    idx: str = dir_path.name
+    sim: str = dir_path[0].split("/")[-1]
+
+    mcc: str = run(
+        "tail -1 {}/MCC.result".format(dir_path[0]), shell=True, capture_output=True
+    ).stdout.decode()[0:-1].split("\t")[1]
+
+    jsd: str = run(
+        "tail -1 {}/JSD.result".format(dir_path[0]), shell=True, capture_output=True
+    ).stdout.decode()[0:-1].split("\t")[1]
+
+    compiled_metrics.loc[idx] = [sim, float(mcc), float(jsd)]  # add new row
 
 
-if __name__ == '__main__':
-    log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    logging.basicConfig(level=logging.INFO, format=log_fmt)
+def _compile_metrics(output_dirs: pd.DataFrame, project_data_dir: Path) -> pd.DataFrame:
+    """
+    Given a dataframe containing all simulation output directories, compile the MCC and JSD metrics
+    into a single dataframe and write to a CSV file in data/interim.
 
-    # not used in this stub but often useful for finding various files
-    project_dir = Path(__file__).resolve().parents[2]
+    Parameters
+    ----------
+    output_dirs : pd.DataFrame
+        Dataframe containing all simulation output directory paths.
 
-    # find .env automagically by walking up directories until it's found, then
-    # load up the .env entries as environment variables
-    load_dotenv(find_dotenv())
+    project_data_dir : pathlib.Path
+        The directory path for the data directory in this Cookiecutter project.
 
-    main()
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe containing MCC and JSD values for all simulations.
+    """
+    compiled_metrics: pd.DataFrame = pd.DataFrame({"sim": [], "mcc": [], "jsd": []})
+    unused: pd.DataFrame = output_dirs.apply(_loop_dirs, axis=1, compiled_metrics=compiled_metrics)
+    del unused  # delete unused pandas apply stdout
+
+    pd.to_csv(str(Path(project_data_dir, "interim", "phx_compiled_metrics.csv")), index=False)
+    return compiled_metrics
+
+
+def _process_metrics(compiled_metrics: pd.DataFrame, project_data_dir: Path) -> None:
+    """
+    Given a dataframe containing all compiled MCC and JSD metrics, subtract JSD from MCC and write
+    to a CSV file in data/processed.
+
+    Parameters
+    ----------
+    compiled_metrics : pd.DataFrame
+        Dataframe containing the compiled MCC and JSD metrics.
+
+    project_data_dir : pathlib.Path
+        The directory for the data directory in this Cookiecutter project.
+    """
+    processed_metrics: pd.DataFrame = compiled_metrics
+    processed_metrics["mcc_minus_jsd"] = processed_metrics["mcc"] - processed_metrics["jsd"]
+    processed_metrics.drop(["mcc", "jsd"], axis=1, inplace=True)
+
+    pd.to_csv(str(Path(project_data_dir, "processed", "phx_processed_metrics.csv")), index=False)
+
+
+def main(output_dir_paths_file: Path) -> None:
+    """
+    Given a text file containing all simulation output directory paths, compile and process MCC and
+    JSD metrics and store in data/interm and data/processed.
+
+    Parameters
+    ----------
+    output_dir_paths_file : pathlib.Path
+        Text file containing paths to each simulation output directory.
+    """
+    output_dirs: pd.DataFrame = pd.read_csv(output_dir_paths_file, header=None)
+    project_data_dir: Path = output_dir_paths_file.absolute().parents[1]
+    compiled_metrics: pd.DataFrame = _compile_metrics(output_dirs, project_data_dir)
+    _process_metrics(compiled_metrics, project_data_dir)  # save in data/processed/
+
+
+if __name__ == "__main__":
+    output_dir_paths_file: Path = Path(sys.argv[1])  # in data/raw/
+    main(output_dir_paths_file)
