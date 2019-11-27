@@ -3,6 +3,7 @@
 import csv
 from pathlib import Path
 import pickle
+import sys
 from typing import List, Union
 
 from .base_tuner import BaseTuner
@@ -16,32 +17,32 @@ from xgboost.compat import XGBModelBase
 
 
 def _score_model(
-    X_test: pd.DataFrame, y_test: pd.DataFrame, tuner: BaseTuner, output_dir: Path
+    X_test: pd.DataFrame, y_test: pd.DataFrame, tuner: BaseTuner, output_dpath: Path
 ) -> None:
     estimator: Union[BaseEstimator, XGBModelBase] = tuner.tune("maximize")
     model_name: str = estimator.__class__.__name__
     print("{}: {}".format(model_name, estimator.score(X_test, y_test)))
-    pickle.dump(estimator, open(Path(estimator, "{}.pickle".format(model_name)), "wb"))
+    pickle.dump(estimator, open(Path(output_dpath, "{}.pickle".format(model_name)), "wb"))
 
 
-def main(trials: int = 100) -> None:
+def main(trials: int = 100, split: float = 0.2) -> None:
     """
     Train models.
     """
-    project_home: Path = Path("../../").absolute()
+    project_home: Path = Path(__file__).cwd().parents[1]
     X: pd.DataFrame = pd.read_csv(
         Path(project_home, "data", "raw", "phx_params.txt"), sep="\t"
     ).drop("Project_Name")
     y: pd.DataFrame = pd.read_csv(
         Path(project_home, "data", "processed", "phx_processed_metrics.csv")
     ).drop("sim")
-    output_dir: Path = Path(project_home, "models")
+    output_dpath: Path = Path(project_home, "models")
 
     X_train: pd.DataFrame
     X_test: pd.DataFrame
     y_train: pd.DataFrame
     y_test: pd.DataFrame
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=split)
 
     kfold_cv: KFold = KFold(n_splits=8, shuffle=True)
     tuners: List[BaseTuner] = [
@@ -108,4 +109,10 @@ def main(trials: int = 100) -> None:
 
     tuner: BaseTuner
     for tuner in tuners:
-        _score_model(X_test, y_test, tuner, output_dir)
+        _score_model(X_test, y_test, tuner, output_dpath)
+
+
+if __name__ == "__main__":
+    trials: int = int(sys.argv[1])  # in data/raw/
+    split: float = float(sys.argv[2])
+    main(trials, split)
