@@ -1,30 +1,41 @@
-# -*- coding: utf-8 -*-
-import click
-import logging
+# src/data/make_dataset.py
+
 from pathlib import Path
-from dotenv import find_dotenv, load_dotenv
+from subprocess import run
+import sys
 
 
-@click.command()
-@click.argument('input_filepath', type=click.Path(exists=True))
-@click.argument('output_filepath', type=click.Path())
-def main(input_filepath, output_filepath):
-    """ Runs data processing scripts to turn raw data from (../raw) into
-        cleaned data ready to be analyzed (saved in ../processed).
+def main(phx_project_dpath: Path, phx_output_dpaths_fname: str) -> None:
     """
-    logger = logging.getLogger(__name__)
-    logger.info('making final data set from raw data')
+    Create list of PoolHapX output directories from given PoolHapX project path.
+
+    Parameters
+    ----------
+    phx_project_dpath : pathlib.Path
+        PoolHapX project directory.
+
+    phx_output_dpaths_fname : str
+        File path for text file containing PoolHapX output directory paths.
+    """
+    phx_output_dpaths: Path = Path(
+        Path(__file__).absolute().parents[2], "data", "raw", phx_output_dpaths_fname
+    )
+    run(
+        "cp {} {}".format(
+            Path(phx_project_dpath, "param_sim", "phx_params.txt"), phx_output_dpaths.parent
+        ),
+        shell=True,
+    )
+
+    with phx_output_dpaths.open("w") as output:
+        directory: Path
+        for directory in Path(phx_project_dpath, "output").iterdir():
+            if directory.is_dir():
+                output.write(str(directory.absolute()) + "\n")
 
 
-if __name__ == '__main__':
-    log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    logging.basicConfig(level=logging.INFO, format=log_fmt)
+if __name__ == "__main__":
+    phx_project_dpath: Path = Path(sys.argv[1]).absolute()
+    phx_output_dpaths_fname: str = sys.argv[2]
 
-    # not used in this stub but often useful for finding various files
-    project_dir = Path(__file__).resolve().parents[2]
-
-    # find .env automagically by walking up directories until it's found, then
-    # load up the .env entries as environment variables
-    load_dotenv(find_dotenv())
-
-    main()
+    main(phx_project_dpath=phx_project_dpath, phx_output_dpaths_fname=phx_output_dpaths_fname)

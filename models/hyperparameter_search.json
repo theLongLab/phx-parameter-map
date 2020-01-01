@@ -1,0 +1,30 @@
+{
+    "lasso": {
+        "alpha": [1e-10, 10]
+    },
+    "ridge": {
+        "alpha": [1e-10, 10]
+    },
+    "elasticnet": {
+        "alpha": [1e-10, 10],
+        "l1_ratio": [1e-2, 1]
+    },
+    "rf": {
+        "n_estimators": [200, 2000],
+        "max_depth": [1, 100],
+        "max_features": ["auto", "sqrt"],
+        "min_samples_leaf": [1e-10, 0.5],
+        "min_samples_split": [1e-10, 1]
+    },
+    "gbtree": {
+        "n_estimators": [200, 2000],
+        "reg_alpha": [1e-10, 10],
+        "reg_lambda": [1e-10, 10],
+        "learning_rate": [1e-10, 1],
+        "max_depth": [1, 20],
+        "min_child_weight": [1, 20],
+        "gamma": [1e-10, 10],
+        "subsample": [0.3, 1],
+        "colsample": [0.5, 1]
+    }
+}
