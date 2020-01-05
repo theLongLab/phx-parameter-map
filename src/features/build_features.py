@@ -82,10 +82,11 @@ def _process_metrics(compiled_metrics: pd.DataFrame, project_data_dir: Path) -> 
     project_data_dir : pathlib.Path
         The directory for the data directory in this Cookiecutter project.
     """
-    # Load raw PHX parameters.
+    # Load raw PHX parameters and maintain same sort type with metrics (**not** natsort).
     processed_phx_params: pd.DataFrame = pd.read_csv(
         Path(project_data_dir, "raw", "phx_params.txt"), sep="\t"
     ).drop("Regression_Gamma_Max", axis=1)
+    processed_phx_params.sort_values(by="Project_Name", inplace=True)
 
     # Drop rows with negative MCC values(?) and NaN values by index.
     drop: RangeIndex = compiled_metrics[
