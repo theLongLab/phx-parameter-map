@@ -62,6 +62,7 @@ def _compile_metrics(output_dirs: pd.DataFrame, project_data_dir: Path) -> pd.Da
 
     # Sort and write to interim directory.
     compiled_metrics.sort_values(by="sim", inplace=True)
+    compiled_metrics.reset_index(drop=True, inplace=True)
     compiled_metrics.to_csv(
         str(Path(project_data_dir, "interim", "phx_compiled_metrics.csv")), index=False
     )
@@ -87,6 +88,7 @@ def _process_metrics(compiled_metrics: pd.DataFrame, project_data_dir: Path) -> 
         Path(project_data_dir, "raw", "phx_params.txt"), sep="\t"
     ).drop("Regression_Gamma_Max", axis=1)
     processed_phx_params.sort_values(by="Project_Name", inplace=True)
+    processed_phx_params.reset_index(drop=True, inplace=True)
 
     # Drop rows with negative MCC values(?) and NaN values by index.
     drop: RangeIndex = compiled_metrics[
