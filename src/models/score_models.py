@@ -48,7 +48,7 @@ def main(
     if model not in options.keys():
         raise ValueError(
             "Unsupported model selected. Currently support models are lasso, ridge, elasticnet, rf "
-            + "and gbtree"
+            + "and gbtree."
         )
 
     # Load data without simulation labels.

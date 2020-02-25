@@ -41,7 +41,7 @@ def _loop_dirs(dir_path: pd.Series, compiled_metrics: pd.DataFrame) -> None:
 def _compile_metrics(output_dirs: pd.DataFrame, project_data_dir: Path) -> pd.DataFrame:
     """
     Given a dataframe containing all simulation output directories, compile the MCC and JSD metrics
-    into a single dataframe and write to a CSV file in data/interim.
+    into a single dataframe and write to a CSV file in data/interim/.
 
     Parameters
     ----------
@@ -56,7 +56,7 @@ def _compile_metrics(output_dirs: pd.DataFrame, project_data_dir: Path) -> pd.Da
     pd.DataFrame
         Dataframe containing MCC and JSD values for all simulations.
     """
-    compiled_metrics: pd.DataFrame = pd.DataFrame({"sim": [], "mcc": [], "jsd": []})
+    compiled_metrics: pd.DataFrame = pd.DataFrame({"sim": [], "mcc": [], "jsd": []})  # new df
     unused: pd.DataFrame = output_dirs.apply(_loop_dirs, axis=1, compiled_metrics=compiled_metrics)
     del unused  # delete unused pandas apply stdout
 
@@ -73,7 +73,7 @@ def _compile_metrics(output_dirs: pd.DataFrame, project_data_dir: Path) -> pd.Da
 def _process_metrics(compiled_metrics: pd.DataFrame, project_data_dir: Path) -> None:
     """
     Given a dataframe containing all compiled MCC and JSD metrics, perform data cleaning, divide
-    JSD from MCC, and write to a CSV file in data/processed.
+    JSD from MCC, and write to a CSV file in data/processed/.
 
     Parameters
     ----------
@@ -86,7 +86,8 @@ def _process_metrics(compiled_metrics: pd.DataFrame, project_data_dir: Path) -> 
     # Load raw PHX parameters and maintain same sort type with metrics (**not** natsort).
     processed_phx_params: pd.DataFrame = pd.read_csv(
         Path(project_data_dir, "raw", "phx_params.txt"), sep="\t"
-    ).drop("Regression_Gamma_Max", axis=1)
+    ).drop("Regression_Gamma_Max", axis=1)  # only if Regression_Gamma_Max exists in the simulated
+                                            # phx_params.txt file
     processed_phx_params.sort_values(by="Project_Name", inplace=True)
     processed_phx_params.reset_index(drop=True, inplace=True)
 
@@ -123,7 +124,9 @@ def main(phx_output_dpaths_fpath: Path) -> None:
     phx_output_dpaths: pd.DataFrame = pd.read_csv(phx_output_dpaths_fpath, header=None)
     project_data_dpath: Path = phx_output_dpaths_fpath.parents[1]
     compiled_metrics: pd.DataFrame = _compile_metrics(phx_output_dpaths, project_data_dpath)
-    _process_metrics(compiled_metrics, project_data_dpath)  # save in data/processed/
+
+    # Save in data/processed/.
+    _process_metrics(compiled_metrics=compiled_metrics, project_data_dir=project_data_dpath)
 
 
 if __name__ == "__main__":
