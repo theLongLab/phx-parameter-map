@@ -9,12 +9,12 @@ inner model of the Deep Learning for Haplotype Reconstruction workflow. The code
 ## Getting Started
 ### Prerequisites
 * Python 3.7.6
-* pandas 0.24.2
-* optuna 0.19.0
-* scikit-learn 0.22
-* xgboost 0.90
-* pytorch 1.3.1
-* cudatoolkit 10.1.243 (optional, if using GPU for xgboost)
+* Pandas 0.24.2
+* Optuna 0.19.0
+* Scikit-Learn 0.22
+* XGBoost 0.90
+* PyTorch 1.3.1
+* CudaToolKit 10.1.243 (optional, if using GPU for xgboost)
 
 
 ## Project Organization
@@ -82,4 +82,15 @@ python src/models/score_models.py <num_trials> <train_test_split_proportion> <nu
     * 5: XGBRegressor
 * ```optional_seed```: optional seed value.
 
-<p><small>Project partially based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+## Built With
+* [XGBoost](https://xgboost.ai/) - gradient boosted decision tree.
+* [Scikit-Learn](https://scikit-learn.org/stable/) - machine learning models.
+* [Pandas](https://pandas.pydata.org/) - data manipulation.
+* [Optuna](https://optuna.org/) - hyperparameter optimization.
+
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgements
+Project partially based on the
+[cookiecutter data science project template](https://drivendata.github.io/cookiecutter-data-science/).
