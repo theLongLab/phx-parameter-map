@@ -1,13 +1,26 @@
-PHX-Parameter-Map
-==============================
+# phx-parameter-map
+Map PoolHapX parameter sets to MCC/JSD ratios. This repository serves as the code base for the
+inner model of the Deep Learning for Haplotype Reconstruction workflow. The code here serves to:
+* Set the hyperparameter search space of a ML model.
+* Perform hyperparameter optimization through optuna.
+* Train and score the ML model with optimal hyperparameters.
+* Serialize the trained model.
 
-Map PHX parameter set to performance metrics
+## Getting Started
+### Prerequisites
+* Python 3.7.6
+* pandas 0.24.2
+* optuna 0.19.0
+* scikit-learn 0.22
+* xgboost 0.90
+* pytorch 1.3.1
+* cudatoolkit 10.1.243 (optional, if using GPU for xgboost)
 
-Project Organization
+
+## Project Organization
 ------------
 
     ├── LICENSE
-    ├── Makefile           <- Makefile with commands like `make data` or `make train`
     ├── README.md          <- The top-level README for developers using this project.
     ├── data
     │   ├── external       <- Data from third party sources.
@@ -15,23 +28,10 @@ Project Organization
     │   ├── processed      <- The final, canonical data sets for modeling.
     │   └── raw            <- The original, immutable data dump.
     │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
+    ├── models             <- Trained and serialized models as well as the hyperparameter search space
+    │   │                     settings file.
+    │   ├── hyperparameter_search.json
     │
-    ├── models             <- Trained and serialized models, model predictions, or model summaries
-    │
-    ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-    │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-data-exploration`.
-    │
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    │
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures        <- Generated graphics and figures to be used in reporting
-    │
-    ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-    │                         generated with `pip freeze > requirements.txt`
-    │
-    ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
     ├── src                <- Source code for use in this project.
     │   ├── __init__.py    <- Makes src a Python module
     │   │
@@ -41,17 +41,45 @@ Project Organization
     │   ├── features       <- Scripts to turn raw data into features for modeling
     │   │   └── build_features.py
     │   │
-    │   ├── models         <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
-    │   │
-    │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
-    │       └── visualize.py
+    │   ├── models         <- Scripts to tune, train, and score models and then serialize trained models.
+    │   │   ├── base_tuner.py
+    │   │   ├── model_tuners.py
+    │   │   └── score_models.py
     │
     └── tox.ini            <- tox file with settings for running tox; see tox.testrun.org
 
 
 --------
 
-<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+## Running the Scripts
+#### Data Compilation
+```bash
+python src/data/make_dataset.py <phx_dir_path> <output_file_paths>
+```
+* ```phx_dir_path```: the directory path for the base PoolHapX folder.
+* ```output_file_paths```: the file name for the compiled list of output directories placed under ```data/raw/```.
+
+#### Data Pre-Processing
+```base
+python src/features/build_features.py <output_file_paths>
+```
+* ```output_file_paths```: the aformentioned file name under ```data/raw/```.
+
+#### Hyperparameter Search, Model Scoring, and Model Serialization
+Prior to running the following, ensure that the hyperparameters and their search spaces are properly
+specified in ```models/hyperparameter_search.json```.
+```base
+python src/models/score_models.py <num_trials> <train_test_split_proportion> <num_folds> <model_num> <optional_seed>
+```
+* ```num_trials```: number of optuna trials.
+* ```train_test_split_proportion```: proportion of data set aside for testing.
+* ```num_folds```: number of folds for *k*-fold cross validation.
+* ```model_num```: the model to tune and train (1-5).
+    * 1: LASSO
+    * 2: Ridge regression
+    * 3: Elastic net
+    * 4: Random forest
+    * 5: XGBRegressor
+* ```optional_seed```: optional seed value.
+
+<p><small>Project partially based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>

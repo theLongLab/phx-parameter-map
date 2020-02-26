@@ -87,3 +87,14 @@ target/
 
 # Mypy cache
 .mypy_cache/
+
+# Build files from cookiecutter not in use
+/docs/
+/notebooks/
+/references/
+/reports/
+Makefile
+/visualization/
+requirements.txt
+setup.py
+test_environment.py

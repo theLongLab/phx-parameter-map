@@ -11,6 +11,9 @@ from xgboost.compat import XGBModelBase
 
 
 class BaseTuner:
+    """
+    Base object for model tuners.
+    """
     def __init__(
         self,
         trials: int,
@@ -35,5 +38,5 @@ class BaseTuner:
         self, seed: Optional[int], direction: Optional[str] = None, n_jobs: Optional[int] = None
     ) -> Union[BaseEstimator, XGBModelBase]:
         self.study: Study = create_study(direction=direction)
-        self.study.optimize(self.objective, n_trials=self.trials, n_jobs=n_jobs, random_state=seed)
-        return self.model.__class__(**self.study.best_params).fit(self.X, self.y)
+        self.study.optimize(self.objective, n_trials=self.trials, n_jobs=n_jobs)
+        return self.model.__class__(**self.study.best_params, random_state=seed).fit(self.X, self.y)
